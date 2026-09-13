@@ -31,12 +31,12 @@ jobs:
           tool: nextest
 
       - name: Check compilation
-        run: cargo check --locked ${{ matrix.cargo_args }}
+        run: cargo check -p blink-one --locked ${{ matrix.cargo_args }}
       - name: Run tests
-        run: cargo nextest run --locked --no-tests=warn ${{ matrix.cargo_args }}
+        run: cargo nextest run -p blink-one --locked --no-tests=warn ${{ matrix.cargo_args }}
       - name: Check formatting
         run: cargo fmt -- --check
       - name: Lint
-        run: cargo clippy ${{ matrix.cargo_args }} --all-targets -- -D warnings
+        run: cargo clippy -p blink-one ${{ matrix.cargo_args }} --all-targets -- -D warnings
       - name: Lint pedantic
-        run: cargo clippy ${{ matrix.cargo_args }} --all-targets -- -D clippy::pedantic
+        run: cargo clippy -p blink-one ${{ matrix.cargo_args }} --all-targets -- -D clippy::pedantic

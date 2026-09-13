@@ -12,7 +12,7 @@ It exposes a high-level API for easy use.
 
 See [the examples](./examples).
 
-Run `cargo run --example fade`.
+From this crate directory, run `cargo run --example fade`. From the workspace root, run `cargo run -p blink-one --example fade`.
 
 # Low level commands
 
