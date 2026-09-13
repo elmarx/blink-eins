@@ -1,0 +1,12 @@
+[package]
+name = "blink-one"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+hidapi = { version = "2.6.7", default-features = false, features = ["linux-native-basic-udev"] }
+
+[features]
+default = []
+# expos the "low level" commands directly
+commands = []
