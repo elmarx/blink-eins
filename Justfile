@@ -1,7 +1,8 @@
 ci:
     cargo check -p blink-one --locked
     cargo check -p blink-one -F commands --locked
-    cargo nextest run -p blink-one --no-tests=warn
+    cargo check -p blink1-ha --locked
+    cargo nextest run --all-features --no-tests=warn
     cargo fmt -- --check
-    cargo clippy -p blink-one --all-features --all-targets -- -D warnings
-    cargo clippy -p blink-one --all-features --all-targets -- -W clippy::pedantic
+    cargo clippy --workspace --all-features --all-targets -- -D warnings
+    cargo clippy --workspace --all-features --all-targets -- -W clippy::pedantic

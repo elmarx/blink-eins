@@ -11,15 +11,8 @@ permissions:
 
 jobs:
   test:
-    name: test (${{ matrix.name }})
+    name: test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - name: without commands feature
-            cargo_args: ""
-          - name: with commands feature
-            cargo_args: "--features commands"
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -31,12 +24,20 @@ jobs:
           tool: nextest
 
       - name: Check compilation
-        run: cargo check -p blink-one --locked ${{ matrix.cargo_args }}
+        run: cargo check --workspace --locked
+      - name: Check compilation (blink-one with commands feature)
+        run: cargo check -p blink-one --locked --features commands
       - name: Run tests
-        run: cargo nextest run -p blink-one --locked --no-tests=warn ${{ matrix.cargo_args }}
+        run: cargo nextest run --workspace --locked --no-tests=warn
+      - name: Run tests (blink-one with commands feature)
+        run: cargo nextest run -p blink-one --locked --no-tests=warn --features commands
       - name: Check formatting
         run: cargo fmt -- --check
       - name: Lint
-        run: cargo clippy -p blink-one ${{ matrix.cargo_args }} --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Lint (blink-one with commands feature)
+        run: cargo clippy -p blink-one --features commands --all-targets -- -D warnings
       - name: Lint pedantic
-        run: cargo clippy -p blink-one ${{ matrix.cargo_args }} --all-targets -- -D clippy::pedantic
+        run: cargo clippy --workspace --all-targets -- -D clippy::pedantic
+      - name: Lint pedantic (blink-one with commands feature)
+        run: cargo clippy -p blink-one --features commands --all-targets -- -D clippy::pedantic

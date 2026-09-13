@@ -1,0 +1,13 @@
+[package]
+name = "blink1-ha"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.6.6", features = ["derive", "env"] }
+serde = { version = "1.0.229", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+thiserror = "2.0.20"
+rumqttc = "0.25.1"
+toml = "1.1.4"
