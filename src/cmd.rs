@@ -30,6 +30,25 @@ pub enum ReportBuf {
 }
 
 impl ReportBuf {
+    /// build a "report id 1" buffer: `{ 1, cmd, args[0], ..., args[5] }`
+    fn new_report1(cmd: u8, args: [u8; REPORT1_SIZE - 2]) -> Self {
+        let mut buf = [0u8; REPORT1_BUF_SIZE];
+        buf[0] = 1;
+        buf[1] = cmd;
+        buf[2..2 + args.len()].copy_from_slice(&args);
+        ReportBuf::Report1(buf)
+    }
+
+    /// build a "report id 2" buffer: `{ 2, cmd, payload... }`
+    #[cfg(feature = "commands")]
+    fn new_report2(cmd: u8, payload: &[u8]) -> Self {
+        let mut buf = [0u8; REPORT2_BUF_SIZE];
+        buf[0] = 2;
+        buf[1] = cmd;
+        buf[2..2 + payload.len()].copy_from_slice(payload);
+        ReportBuf::Report2(buf)
+    }
+
     #[must_use]
     pub fn as_slice(&self) -> &[u8] {
         match self {
@@ -166,7 +185,6 @@ pub enum WriteCmd {
 }
 
 impl WriteCmd {
-    #[allow(clippy::too_many_lines)]
     #[must_use]
     pub fn to_buffer(&self) -> ReportBuf {
         match self {
@@ -176,29 +194,19 @@ impl WriteCmd {
                 b,
                 duration,
                 led,
-            } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'c';
-                buf[2] = *r;
-                buf[3] = *g;
-                buf[4] = *b;
-                buf[5] = into_th(*duration);
-                buf[6] = into_tl(*duration);
-                buf[7] = u8::from(*led);
-                ReportBuf::Report1(buf)
-            }
+            } => ReportBuf::new_report1(
+                b'c',
+                [
+                    *r,
+                    *g,
+                    *b,
+                    into_th(*duration),
+                    into_tl(*duration),
+                    u8::from(*led),
+                ],
+            ),
             WriteCmd::SetRgbNow { r, g, b, led } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'n';
-                buf[2] = *r;
-                buf[3] = *g;
-                buf[4] = *b;
-                buf[5] = 0;
-                buf[6] = 0;
-                buf[7] = u8::from(*led);
-                ReportBuf::Report1(buf)
+                ReportBuf::new_report1(b'n', [*r, *g, *b, 0, 0, u8::from(*led)])
             }
             #[cfg(feature = "commands")]
             WriteCmd::ServerDownTickle {
@@ -207,18 +215,17 @@ impl WriteCmd {
                 stay_on,
                 start_pos,
                 end_pos,
-            } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'D';
-                buf[2] = u8::from(*enable);
-                buf[3] = into_th(*timeout);
-                buf[4] = into_tl(*timeout);
-                buf[5] = u8::from(*stay_on);
-                buf[6] = *start_pos;
-                buf[7] = *end_pos;
-                ReportBuf::Report1(buf)
-            }
+            } => ReportBuf::new_report1(
+                b'D',
+                [
+                    u8::from(*enable),
+                    into_th(*timeout),
+                    into_tl(*timeout),
+                    u8::from(*stay_on),
+                    *start_pos,
+                    *end_pos,
+                ],
+            ),
             #[cfg(feature = "commands")]
             WriteCmd::PlayLoop {
                 play,
@@ -226,14 +233,7 @@ impl WriteCmd {
                 end_pos,
                 count,
             } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'p';
-                buf[2] = u8::from(*play);
-                buf[3] = *start_pos;
-                buf[4] = *end_pos;
-                buf[5] = *count;
-                ReportBuf::Report1(buf)
+                ReportBuf::new_report1(b'p', [u8::from(*play), *start_pos, *end_pos, *count, 0, 0])
             }
             #[cfg(feature = "commands")]
             WriteCmd::SetColorPatternLine {
@@ -242,93 +242,43 @@ impl WriteCmd {
                 b,
                 duration,
                 pos,
-            } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'P';
-                buf[2] = *r;
-                buf[3] = *g;
-                buf[4] = *b;
-                buf[5] = into_th(*duration);
-                buf[6] = into_tl(*duration);
-                buf[7] = *pos;
-                ReportBuf::Report1(buf)
-            }
+            } => ReportBuf::new_report1(
+                b'P',
+                [*r, *g, *b, into_th(*duration), into_tl(*duration), *pos],
+            ),
             #[cfg(feature = "commands")]
-            WriteCmd::SaveColorPatterns => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'W';
-                buf[2] = 0xBE;
-                buf[3] = 0xEF;
-                ReportBuf::Report1(buf)
-            }
+            WriteCmd::SaveColorPatterns => ReportBuf::new_report1(b'W', [0xBE, 0xEF, 0, 0, 0, 0]),
             #[cfg(feature = "commands")]
             WriteCmd::SetLed { led } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'l';
-                buf[2] = u8::from(*led);
-                ReportBuf::Report1(buf)
+                ReportBuf::new_report1(b'l', [u8::from(*led), 0, 0, 0, 0, 0])
             }
             #[cfg(feature = "commands")]
             WriteCmd::WriteEeprom { addr, val } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'E';
-                buf[2] = *addr;
-                buf[3] = *val;
-                ReportBuf::Report1(buf)
+                ReportBuf::new_report1(b'E', [*addr, *val, 0, 0, 0, 0])
             }
             #[cfg(feature = "commands")]
-            WriteCmd::Test => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'!';
-                ReportBuf::Report1(buf)
-            }
+            WriteCmd::Test => ReportBuf::new_report1(b'!', [0; REPORT1_SIZE - 2]),
             #[cfg(feature = "commands")]
             WriteCmd::WriteNote { note_id, data } => {
-                let mut buf = [0u8; REPORT2_BUF_SIZE];
-                buf[0] = 2;
-                buf[1] = b'F';
-                buf[2] = *note_id;
-                buf[3..53].copy_from_slice(data);
-                ReportBuf::Report2(buf)
+                let mut payload = [0u8; 51];
+                payload[0] = *note_id;
+                payload[1..].copy_from_slice(data);
+                ReportBuf::new_report2(b'F', &payload)
             }
             #[cfg(feature = "commands")]
-            WriteCmd::GoToBootloader => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'G';
-                buf[2..8].copy_from_slice(b"oBoot\0");
-                ReportBuf::Report1(buf)
-            }
+            WriteCmd::GoToBootloader => ReportBuf::new_report1(b'G', *b"oBoot\0"),
             #[cfg(feature = "commands")]
-            WriteCmd::LockBootloader => {
-                let mut buf = [0u8; REPORT2_BUF_SIZE];
-                buf[0] = 2;
-                buf[1] = b'L';
-                let lock_magic = b"ockBootload";
-                buf[2..2 + lock_magic.len()].copy_from_slice(lock_magic);
-                ReportBuf::Report2(buf)
-            }
+            WriteCmd::LockBootloader => ReportBuf::new_report2(b'L', b"ockBootload"),
             #[cfg(feature = "commands")]
             WriteCmd::SetStartupParams {
                 boot_mode,
                 play_start,
                 play_end,
                 play_count,
-            } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'B';
-                buf[2] = *boot_mode;
-                buf[3] = *play_start;
-                buf[4] = *play_end;
-                buf[5] = *play_count;
-                ReportBuf::Report1(buf)
-            }
+            } => ReportBuf::new_report1(
+                b'B',
+                [*boot_mode, *play_start, *play_end, *play_count, 0, 0],
+            ),
         }
     }
 }
@@ -376,57 +326,17 @@ impl QueryCmd {
     pub fn to_buffer(&self) -> ReportBuf {
         match self {
             QueryCmd::ReadCurrentRgb { led } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'r';
-                buf[7] = u8::from(*led);
-                ReportBuf::Report1(buf)
+                ReportBuf::new_report1(b'r', [0, 0, 0, 0, 0, u8::from(*led)])
             }
-            QueryCmd::PlaystateReadback => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'S';
-                ReportBuf::Report1(buf)
-            }
+            QueryCmd::PlaystateReadback => ReportBuf::new_report1(b'S', [0; REPORT1_SIZE - 2]),
             QueryCmd::ReadColorPatternLine { pos } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'R';
-                buf[7] = *pos;
-                ReportBuf::Report1(buf)
+                ReportBuf::new_report1(b'R', [0, 0, 0, 0, 0, *pos])
             }
-            QueryCmd::ReadEeprom { addr } => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'e';
-                buf[2] = *addr;
-                ReportBuf::Report1(buf)
-            }
-            QueryCmd::GetVersion => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'v';
-                ReportBuf::Report1(buf)
-            }
-            QueryCmd::ReadNote { note_id } => {
-                let mut buf = [0u8; REPORT2_BUF_SIZE];
-                buf[0] = 2;
-                buf[1] = b'f';
-                buf[2] = *note_id;
-                ReportBuf::Report2(buf)
-            }
-            QueryCmd::GetStartupParams => {
-                let mut buf = [0u8; REPORT1_BUF_SIZE];
-                buf[0] = 1;
-                buf[1] = b'b';
-                ReportBuf::Report1(buf)
-            }
-            QueryCmd::GetChipUniqueId => {
-                let mut buf = [0u8; REPORT2_BUF_SIZE];
-                buf[0] = 2;
-                buf[1] = b'U';
-                ReportBuf::Report2(buf)
-            }
+            QueryCmd::ReadEeprom { addr } => ReportBuf::new_report1(b'e', [*addr, 0, 0, 0, 0, 0]),
+            QueryCmd::GetVersion => ReportBuf::new_report1(b'v', [0; REPORT1_SIZE - 2]),
+            QueryCmd::ReadNote { note_id } => ReportBuf::new_report2(b'f', &[*note_id]),
+            QueryCmd::GetStartupParams => ReportBuf::new_report1(b'b', [0; REPORT1_SIZE - 2]),
+            QueryCmd::GetChipUniqueId => ReportBuf::new_report2(b'U', &[]),
         }
     }
 
@@ -444,5 +354,255 @@ impl QueryCmd {
                 ReportBuf::Report1(buf)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fade_to_rgb() {
+        let cmd = WriteCmd::FadeToRgb {
+            r: 0x10,
+            g: 0x20,
+            b: 0x30,
+            duration: 0x0102,
+            led: Led::Led1,
+        };
+        let actual = cmd.to_buffer();
+        assert_eq!(
+            actual.as_slice(),
+            &[1, b'c', 0x10, 0x20, 0x30, 0x01, 0x02, 1, 0]
+        );
+    }
+
+    #[test]
+    fn set_rgb_now() {
+        let cmd = WriteCmd::SetRgbNow {
+            r: 0x10,
+            g: 0x20,
+            b: 0x30,
+            led: Led::All,
+        };
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'n', 0x10, 0x20, 0x30, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn server_down_tickle() {
+        let cmd = WriteCmd::ServerDownTickle {
+            enable: true,
+            timeout: 0x0102,
+            stay_on: true,
+            start_pos: 3,
+            end_pos: 4,
+        };
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'D', 1, 0x01, 0x02, 1, 3, 4, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn play_loop() {
+        let cmd = WriteCmd::PlayLoop {
+            play: true,
+            start_pos: 1,
+            end_pos: 2,
+            count: 3,
+        };
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'p', 1, 1, 2, 3, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn set_color_pattern_line() {
+        let cmd = WriteCmd::SetColorPatternLine {
+            r: 0x10,
+            g: 0x20,
+            b: 0x30,
+            duration: 0x0102,
+            pos: 5,
+        };
+        let actual = cmd.to_buffer();
+        assert_eq!(
+            actual.as_slice(),
+            &[1, b'P', 0x10, 0x20, 0x30, 0x01, 0x02, 5, 0]
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn save_color_patterns() {
+        let cmd = WriteCmd::SaveColorPatterns;
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'W', 0xBE, 0xEF, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn set_led() {
+        let cmd = WriteCmd::SetLed { led: Led::Led2 };
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'l', 2, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn write_eeprom() {
+        let cmd = WriteCmd::WriteEeprom {
+            addr: 0x10,
+            val: 0x20,
+        };
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'E', 0x10, 0x20, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn test_cmd() {
+        let cmd = WriteCmd::Test;
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'!', 0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn write_note() {
+        let mut data = [0u8; 50];
+        data[0] = 0xAA;
+        data[49] = 0xBB;
+        let cmd = WriteCmd::WriteNote { note_id: 7, data };
+
+        let actual = cmd.to_buffer();
+        let actual = actual.as_slice();
+        assert_eq!(actual.len(), REPORT2_BUF_SIZE);
+        assert_eq!(actual[0], 2);
+        assert_eq!(actual[1], b'F');
+        assert_eq!(actual[2], 7);
+        assert_eq!(actual[3], 0xAA);
+        assert_eq!(actual[52], 0xBB);
+        // remaining bytes are untouched padding
+        assert!(actual[53..].iter().all(|&b| b == 0));
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn go_to_bootloader() {
+        let cmd = WriteCmd::GoToBootloader;
+        let actual = cmd.to_buffer();
+        assert_eq!(
+            actual.as_slice(),
+            &[1, b'G', b'o', b'B', b'o', b'o', b't', 0, 0]
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn lock_bootloader() {
+        let cmd = WriteCmd::LockBootloader;
+        let buf = cmd.to_buffer();
+        let actual = buf.as_slice();
+        assert_eq!(actual.len(), REPORT2_BUF_SIZE);
+        assert_eq!(&actual[0..13], b"\x02LockBootload");
+        assert!(actual[13..].iter().all(|&b| b == 0));
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn set_startup_params() {
+        let cmd = WriteCmd::SetStartupParams {
+            boot_mode: 1,
+            play_start: 2,
+            play_end: 3,
+            play_count: 4,
+        };
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'B', 1, 2, 3, 4, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn read_current_rgb() {
+        let cmd = QueryCmd::ReadCurrentRgb { led: Led::Led1 };
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'r', 0, 0, 0, 0, 0, 1, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn playstate_readback() {
+        let cmd = QueryCmd::PlaystateReadback;
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'S', 0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn read_color_pattern_line() {
+        let cmd = QueryCmd::ReadColorPatternLine { pos: 9 };
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'R', 0, 0, 0, 0, 0, 9, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn read_eeprom() {
+        let cmd = QueryCmd::ReadEeprom { addr: 0x42 };
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'e', 0x42, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn get_version() {
+        let cmd = QueryCmd::GetVersion;
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'v', 0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn read_note() {
+        let cmd = QueryCmd::ReadNote { note_id: 3 };
+        let buf = cmd.to_buffer();
+        let actual = buf.as_slice();
+        assert_eq!(actual.len(), REPORT2_BUF_SIZE);
+        assert_eq!(&actual[0..3], &[2, b'f', 3]);
+        assert!(actual[3..].iter().all(|&b| b == 0));
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn get_startup_params() {
+        let cmd = QueryCmd::GetStartupParams;
+        let actual = cmd.to_buffer();
+        assert_eq!(actual.as_slice(), &[1, b'b', 0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn get_chip_unique_id() {
+        let cmd = QueryCmd::GetChipUniqueId;
+        let buf = cmd.to_buffer();
+        let actual = buf.as_slice();
+        assert_eq!(actual.len(), REPORT2_BUF_SIZE);
+        assert_eq!(&actual[0..2], &[2, b'U']);
+        assert!(actual[2..].iter().all(|&b| b == 0));
+    }
+
+    #[test]
+    #[cfg(feature = "commands")]
+    fn response_buffer_sizes() {
+        let actual = QueryCmd::GetVersion.response_buffer();
+        assert_eq!(actual.as_slice().len(), REPORT1_BUF_SIZE);
+
+        let actual = QueryCmd::ReadNote { note_id: 0 }.response_buffer();
+        assert_eq!(actual.as_slice().len(), REPORT2_BUF_SIZE);
+
+        let actual = QueryCmd::GetChipUniqueId.response_buffer();
+        assert_eq!(actual.as_slice().len(), REPORT2_BUF_SIZE);
     }
 }
