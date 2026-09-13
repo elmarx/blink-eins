@@ -9,9 +9,13 @@ use std::time::Duration;
 use crate::cmd::WriteCmd;
 #[cfg(feature = "commands")]
 pub use cmd::{QueryCmd, ReportBuf, WriteCmd};
+pub use hid_ext::HidApiExt;
 #[cfg(feature = "commands")]
 pub use hid_ext::HidDeviceExt;
 use hidapi::{HidDevice, HidResult};
+
+pub const BLINK1_VENDOR_ID: u16 = 0x27B8; /* = 0x27B8 = 10168 = thingm */
+pub const BLINK1_DEVICE_ID: u16 = 0x01ED; /* = 0x01ED */
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Led {
