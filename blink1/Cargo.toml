@@ -7,6 +7,10 @@ repository = "https://github.com/elmarx/blink1-rs"
 
 [dependencies]
 hidapi = { version = "2.6.7", default-features = false, features = ["linux-native-basic-udev"] }
+tracing = "0.1.44"
+
+[dev-dependencies]
+tracing-subscriber = "0.3.17"
 
 [features]
 default = []

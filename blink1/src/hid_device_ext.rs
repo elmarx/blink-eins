@@ -21,7 +21,9 @@ pub trait HidDeviceExt {
 impl HidDeviceExt for HidDevice {
     fn send_cmd(&self, cmd: &WriteCmd) -> HidResult<()> {
         let buf = cmd.to_buffer();
-        self.send_feature_report(buf.as_slice())
+        let buf = buf.as_slice();
+        tracing::debug!(?buf, "Sending feature report");
+        self.send_feature_report(buf)
     }
 
     #[cfg(feature = "commands")]

@@ -21,16 +21,20 @@ pub trait Blink1Device {
 impl Blink1Device for HidDevice {
     fn fade_to_rgb(&self, r: u8, g: u8, b: u8, duration: Duration, led: Led) -> HidResult<()> {
         let dms = u16::try_from(duration.as_millis() / 10).unwrap_or(u16::MAX);
-        self.send_cmd(&WriteCmd::FadeToRgb {
+        let cmd = WriteCmd::FadeToRgb {
             r,
             g,
             b,
             duration: dms,
             led,
-        })
+        };
+        tracing::debug!(?cmd, "Sending command");
+        self.send_cmd(&cmd)
     }
 
     fn set_rgb_now(&self, r: u8, g: u8, b: u8, led: Led) -> HidResult<()> {
-        self.send_cmd(&WriteCmd::SetRgbNow { r, g, b, led })
+        let cmd = WriteCmd::SetRgbNow { r, g, b, led };
+        tracing::debug!(?cmd, "Sending command");
+        self.send_cmd(&cmd)
     }
 }

@@ -6,6 +6,10 @@ use blink_one::Led;
 use hidapi::{HidApi, HidResult};
 
 fn main() -> HidResult<()> {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .init();
+
     let api = HidApi::new()?;
     let device = api.open_blink1()?;
 
