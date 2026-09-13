@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use blink_one::{Blink1Device, HidApiExt, Led};
+use blink_one::Blink1Device;
+use blink_one::HidApiExt;
+use blink_one::Led;
 use hidapi::{HidApi, HidResult};
 
 fn main() -> HidResult<()> {

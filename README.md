@@ -18,7 +18,7 @@ Run `cargo run --example fade`.
 
 HID commands are available behind the `commands` feature flag through [WriteCmd](./src/cmd.rs) and [QueryCmd](./src/cmd.rs).
 
-Commands may be sent to a `HidDevice` via [HidDeviceExt](./src/hid_ext.rs).
+Commands may be sent to a `HidDevice` via [HidDeviceExt](./src/hid_device_ext.rs).
 
 ## Usage
 

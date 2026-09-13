@@ -1,9 +1,9 @@
 #[cfg(feature = "commands")]
-use crate::cmd::{QueryCmd, ReportBuf};
-
+use crate::ReportBuf;
+#[cfg(feature = "commands")]
+use crate::cmd::QueryCmd;
 use crate::cmd::WriteCmd;
-use crate::{BLINK1_DEVICE_ID, BLINK1_VENDOR_ID};
-use hidapi::{HidApi, HidDevice, HidResult};
+use hidapi::{HidDevice, HidResult};
 
 pub trait HidDeviceExt {
     /// # Errors
@@ -16,13 +16,6 @@ pub trait HidDeviceExt {
     ///
     /// `HidResult` if the underlying HID operation fails
     fn query_cmd(&self, cmd: &QueryCmd) -> HidResult<ReportBuf>;
-}
-
-pub trait HidApiExt {
-    /// # Errors
-    ///
-    /// `HidResult` if the underlying HID operation fails
-    fn open_blink1(&self) -> HidResult<HidDevice>;
 }
 
 impl HidDeviceExt for HidDevice {
@@ -39,11 +32,5 @@ impl HidDeviceExt for HidDevice {
         let mut response_buf = cmd.response_buffer();
         self.get_feature_report(response_buf.as_mut_slice())?;
         Ok(response_buf)
-    }
-}
-
-impl HidApiExt for HidApi {
-    fn open_blink1(&self) -> HidResult<HidDevice> {
-        self.open(BLINK1_VENDOR_ID, BLINK1_DEVICE_ID)
     }
 }
