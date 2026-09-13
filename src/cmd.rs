@@ -1,7 +1,6 @@
-use crate::Led;
-/// implementation of [HID Commands](https://github.com/todbot/blink1/blob/main/docs/blink1-hid-commands.md)
-use std::time::Duration;
+//! implementation of [HID Commands](https://github.com/todbot/blink1/blob/main/docs/blink1-hid-commands.md)
 
+use crate::Led;
 // sizes copied from https://github.com/todbot/blink1-tool/blob/main/blink1-lib.h#L36-L41
 const REPORT1_SIZE: usize = 8;
 
@@ -55,12 +54,12 @@ impl AsRef<[u8]> for ReportBuf {
     }
 }
 
-fn duration_to_fade_time(duration: &Duration) -> (u8, u8) {
-    let dms = u16::try_from(duration.as_millis() / 10).unwrap_or(u16::MAX);
-    let th = (dms >> 8) as u8;
-    let tl = (dms & 0xff) as u8;
+fn into_th(dms: u16) -> u8 {
+    (dms >> 8) as u8
+}
 
-    (th, tl)
+fn into_tl(dms: u16) -> u8 {
+    (dms & 0xff) as u8
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -73,7 +72,7 @@ pub enum WriteCmd {
         r: u8,
         g: u8,
         b: u8,
-        duration: Duration,
+        duration: u16,
         led: Led,
     },
     /// Set RGB color now: format `{ 1, 'n', r, g, b, 0, 0, n }` (*)
@@ -88,7 +87,7 @@ pub enum WriteCmd {
     /// stay on flag, and start/end loop positions.
     ServerDownTickle {
         enable: bool,
-        timeout: Duration,
+        timeout: u16,
         stay_on: bool,
         start_pos: u8,
         end_pos: u8,
@@ -113,7 +112,7 @@ pub enum WriteCmd {
         r: u8,
         g: u8,
         b: u8,
-        duration: Duration,
+        duration: u16,
         pos: u8,
     },
     #[cfg(feature = "commands")]
@@ -178,15 +177,14 @@ impl WriteCmd {
                 duration,
                 led,
             } => {
-                let (th, tl) = duration_to_fade_time(duration);
                 let mut buf = [0u8; REPORT1_BUF_SIZE];
                 buf[0] = 1;
                 buf[1] = b'c';
                 buf[2] = *r;
                 buf[3] = *g;
                 buf[4] = *b;
-                buf[5] = th;
-                buf[6] = tl;
+                buf[5] = into_th(*duration);
+                buf[6] = into_tl(*duration);
                 buf[7] = u8::from(*led);
                 ReportBuf::Report1(buf)
             }
@@ -210,13 +208,12 @@ impl WriteCmd {
                 start_pos,
                 end_pos,
             } => {
-                let (th, tl) = duration_to_fade_time(timeout);
                 let mut buf = [0u8; REPORT1_BUF_SIZE];
                 buf[0] = 1;
                 buf[1] = b'D';
                 buf[2] = u8::from(*enable);
-                buf[3] = th;
-                buf[4] = tl;
+                buf[3] = into_th(*timeout);
+                buf[4] = into_tl(*timeout);
                 buf[5] = u8::from(*stay_on);
                 buf[6] = *start_pos;
                 buf[7] = *end_pos;
@@ -246,15 +243,14 @@ impl WriteCmd {
                 duration,
                 pos,
             } => {
-                let (th, tl) = duration_to_fade_time(duration);
                 let mut buf = [0u8; REPORT1_BUF_SIZE];
                 buf[0] = 1;
                 buf[1] = b'P';
                 buf[2] = *r;
                 buf[3] = *g;
                 buf[4] = *b;
-                buf[5] = th;
-                buf[6] = tl;
+                buf[5] = into_th(*duration);
+                buf[6] = into_tl(*duration);
                 buf[7] = *pos;
                 ReportBuf::Report1(buf)
             }
