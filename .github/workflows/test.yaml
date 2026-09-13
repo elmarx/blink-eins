@@ -1,0 +1,42 @@
+name: test
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: without commands feature
+            cargo_args: ""
+          - name: with commands feature
+            cargo_args: "--features commands"
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
+      - name: Check compilation
+        run: cargo check --locked ${{ matrix.cargo_args }}
+      - name: Run tests
+        run: cargo nextest run --locked --no-tests=warn ${{ matrix.cargo_args }}
+      - name: Check formatting
+        run: cargo fmt -- --check
+      - name: Lint
+        run: cargo clippy ${{ matrix.cargo_args }} --all-targets -- -D warnings
+      - name: Lint pedantic
+        run: cargo clippy ${{ matrix.cargo_args }} --all-targets -- -D clippy::pedantic
