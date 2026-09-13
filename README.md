@@ -8,6 +8,12 @@ This crate implements all blink(1) [HID commands](https://github.com/todbot/blin
 
 It exposes a high-level API for easy use.
 
+## Usage
+
+See [the examples](./examples).
+
+Run `cargo run --example fade`.
+
 # Low level commands
 
 HID commands are available behind the `commands` feature flag through [WriteCmd](./src/cmd.rs) and [QueryCmd](./src/cmd.rs).
