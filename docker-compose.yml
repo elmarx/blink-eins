@@ -1,0 +1,14 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"
+    configs:
+      - source: mosquitto-config
+        target: /mosquitto/config/mosquitto.conf
+
+configs:
+  mosquitto-config:
+    content: |
+      listener 1883
+      allow_anonymous true

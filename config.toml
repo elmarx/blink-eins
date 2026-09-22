@@ -1,0 +1,3 @@
+[mqtt]
+host = "localhost" # Can be overriden with MQTT_HOST env var
+port = 1883
