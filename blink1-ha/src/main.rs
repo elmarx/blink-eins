@@ -2,14 +2,20 @@ use crate::cli::Args;
 use crate::config::{Config, get_config_path};
 use crate::error::Blink1Error;
 use clap::Parser;
+use rumqttc::v5::mqttbytes::QoS;
+use rumqttc::v5::{AsyncClient, MqttOptions};
+use std::time::Duration;
+use tokio_stream::StreamExt;
 
 mod cli;
 mod config;
 
 mod error;
+mod mqtt;
 mod utils;
 
-fn main() -> Result<(), Blink1Error> {
+#[tokio::main]
+async fn main() -> Result<(), Blink1Error> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -24,6 +30,12 @@ fn main() -> Result<(), Blink1Error> {
     let config = Config::from_file(&config)?;
 
     tracing::info!(?config, "Loaded configuration");
+
+    let mut stream = mqtt::init(&config.mqtt).await?;
+
+    while let Some(event) = stream.next().await {
+        tracing::info!(?event, "Received MQTT event");
+    }
 
     Ok(())
 }

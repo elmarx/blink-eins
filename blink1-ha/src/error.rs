@@ -14,6 +14,9 @@ pub enum Blink1Error {
     #[error("Failed to publish MQTT availability message: {0}")]
     MqttOnlinePublish(#[source] Box<rumqttc::v5::ClientError>),
 
+    #[error("Failed to subscribe to MQTT topic: {0}")]
+    MqttSubscribeError(#[source] Box<rumqttc::v5::ClientError>),
+
     #[error("Config nof found")]
     ConfigNotFound,
 }
